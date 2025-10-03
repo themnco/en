@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comet - Account Management</title>
+    <title>Comet - Account</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <!-- The Storage SDK is no longer needed -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400&display=swap');
         :root {
@@ -20,15 +20,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { background: var(--background); }
         body { color: var(--text-primary); font-family: var(--font-sans); }
-        
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .navbar-title { font-size: 1rem; font-weight: 500; color: var(--text-secondary); }
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid var(--border-color); }
+        .logo { font-size: 20px; font-weight: 600; }
         .nav-links { display: flex; gap: 30px; }
         .nav-link { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; font-size: 0.9rem; }
         .nav-link:hover { color: var(--text-primary); }
@@ -41,10 +34,9 @@
             display: flex;
             align-items: center;
             gap: 30px;
-            margin-bottom: 60px;
+            margin-bottom: 30px;
         }
         .profile-picture-container {
-            position: relative;
             width: 96px; height: 96px;
             border-radius: 50%;
             border: 1px solid var(--border-color);
@@ -55,31 +47,71 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        .profile-picture-overlay {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; border-radius: 50%;
-            background: rgba(0,0,0,0.5); color: white;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 0.9rem; opacity: 0; transition: opacity 0.2s ease; cursor: pointer;
-        }
-        .profile-picture-container:hover .profile-picture-overlay { opacity: 1; }
-        .spinner {
-            position: absolute; top: 50%; left: 50%;
-            width: 40px; height: 40px; margin: -20px 0 0 -20px;
-            border: 3px solid rgba(255,255,255,0.2);
-            border-top-color: var(--text-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite; display: none;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
         .profile-header h1 { font-size: 2.5rem; font-weight: 500; }
         .profile-header p { color: var(--text-secondary); font-family: var(--font-mono); margin-top: 10px; }
+        
+        #chooseAvatarBtn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 30px;
+            display: none; /* Hidden by default, shown via JS if needed */
+        }
+        #chooseAvatarBtn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-primary);
+        }
         
         .details-list dt { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; }
         .details-list dd { font-size: 1.2rem; font-family: var(--font-mono); margin-bottom: 30px; }
         .loading { text-align: center; margin-top: 100px; font-size: 1rem; color: var(--text-secondary); }
-        .upload-message { color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px; height: 20px; }
+        
+        /* --- Avatar Selection Modal --- */
+        #avatarModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: #111;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .modal-content h2 { margin-bottom: 20px; font-weight: 500; }
+        #avatarGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        #avatarGrid img {
+            width: 100%;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        #avatarGrid img:hover {
+            border-color: var(--text-primary);
+            transform: scale(1.05);
+        }
+        #modalMessage { margin-top: 20px; color: var(--text-secondary); height: 20px; }
     </style>
 </head>
 <body>
@@ -87,27 +119,23 @@
         <nav class="navbar">
             <div class="navbar-title">Account Management</div>
             <div class="nav-links">
-                <!-- NEW: Link back to the main application -->
                 <a href="https://abc.xyz" class="nav-link">← Back to App</a>
                 <a href="4.html" class="nav-link logout">Sign Out</a>
             </div>
         </nav>
         <div class="main-content">
             <section class="profile-picture-section">
-                <div class="profile-picture-container" onclick="triggerFileUpload()">
+                <div class="profile-picture-container">
                     <img id="profilePicture" src="" alt="Profile Picture">
-                    <div class="profile-picture-overlay">Change</div>
-                    <div id="spinner" class="spinner"></div>
                 </div>
                 <header class="profile-header">
                     <h1 id="nameDisplay"></h1>
                     <p id="cometIdDisplay"></p>
                 </header>
             </section>
-            
-            <input type="file" id="fileInput" accept="image/png, image/jpeg" style="display:none;" onchange="uploadProfilePicture(event)">
-            <p id="uploadMessage" class="upload-message"></p>
 
+            <button id="chooseAvatarBtn" onclick="openAvatarModal()">Choose Avatar</button>
+            
             <dl class="details-list">
                 <div> <dt>Date of Birth</dt> <dd id="dobDisplay"></dd> </div>
                 <div> <dt>Gender</dt> <dd id="genderDisplay"></dd> </div>
@@ -115,15 +143,26 @@
         </div>
     </main>
     <div id="loading" class="loading">Loading account data...</div>
-    
-    <!-- JavaScript remains the same as the previous correct version -->
+
+    <!-- Avatar Selection Modal HTML -->
+    <div id="avatarModal">
+        <div class="modal-content">
+            <h2>Select Your Avatar</h2>
+            <div id="avatarGrid"></div>
+            <p id="modalMessage">Your choice is permanent.</p>
+        </div>
+    </div>
+
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBDHgR4VKaa-c5OcfGDhaLfVlDBkRRWd8k", authDomain: "commet-accounts.firebaseapp.com", projectId: "commet-accounts", storageBucket: "commet-accounts.firebasestorage.app", messagingSenderId: "35074463743", appId: "1:35074463743:web:e11289b56b6fa845e879ca", measurementId: "G-F1N8TQLMT5" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
+        const avatarModal = document.getElementById('avatarModal');
+        const avatarGrid = document.getElementById('avatarGrid');
+        const chooseAvatarBtn = document.getElementById('chooseAvatarBtn');
         let currentUserId = null;
+        let isGridBuilt = false;
 
         async function loadProfile() {
             const loggedInUserCometId = localStorage.getItem('loggedInUserCometId');
@@ -143,11 +182,17 @@
                     document.getElementById('genderDisplay').textContent = userData.gender;
 
                     const profilePicElement = document.getElementById('profilePicture');
+                    
                     if (userData.profilePictureUrl) {
+                        // User has already chosen a picture, so just display it
                         profilePicElement.src = userData.profilePictureUrl;
+                        // The "Choose Avatar" button remains hidden
                     } else {
-                        const randomNumber = Math.floor(Math.random() * 20) + 1;
-                        profilePicElement.src = `https://xperts-app.github.io/extensions/cdn/Images/profile/${randomNumber}.jpg`;
+                        // User has NOT chosen a picture yet
+                        // Show a default placeholder
+                        profilePicElement.src = `https://xperts-app.github.io/extensions/cdn/Images/profile/1.jpg`;
+                        // Show the button to let them choose
+                        chooseAvatarBtn.style.display = 'block';
                     }
 
                     document.getElementById('loading').style.display = 'none';
@@ -157,44 +202,55 @@
                     window.location.href = '1.html'; 
                 }
             } catch (error) { 
-                console.error("Error loading profile:", error);
                 document.getElementById('loading').textContent = 'Error loading data.'; 
             }
         }
 
-        function triggerFileUpload() {
-            document.getElementById('fileInput').click();
+        function openAvatarModal() {
+            // Build the grid of images only once
+            if (!isGridBuilt) {
+                for (let i = 1; i <= 20; i++) {
+                    const img = document.createElement('img');
+                    const imgUrl = `https://xperts-app.github.io/extensions/cdn/Images/profile/${i}.jpg`;
+                    img.src = imgUrl;
+                    img.alt = `Avatar ${i}`;
+                    img.onclick = () => selectProfilePicture(imgUrl);
+                    avatarGrid.appendChild(img);
+                }
+                isGridBuilt = true;
+            }
+            avatarModal.style.display = 'flex';
         }
+        
+        // Clicking the dark background will also close the modal
+        avatarModal.onclick = function(event) {
+            if (event.target === avatarModal) {
+                avatarModal.style.display = 'none';
+            }
+        };
+        
+        async function selectProfilePicture(imageUrl) {
+            if (!currentUserId) return;
 
-        async function uploadProfilePicture(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) { document.getElementById('uploadMessage').textContent = 'Error: Invalid file type.'; return; }
-
-            const spinner = document.getElementById('spinner');
-            const uploadMessage = document.getElementById('uploadMessage');
+            const modalMessage = document.getElementById('modalMessage');
+            modalMessage.textContent = 'Saving...';
             
-            spinner.style.display = 'block';
-            uploadMessage.textContent = 'Uploading...';
-
-            const filePath = `profile_pictures/${currentUserId}`;
-            const fileRef = storage.ref(filePath);
-
             try {
-                const snapshot = await fileRef.put(file);
-                const downloadURL = await snapshot.ref.getDownloadURL();
+                // Update Firestore with the chosen URL
+                await db.collection('users').doc(currentUserId).update({
+                    profilePictureUrl: imageUrl
+                });
 
-                await db.collection('users').doc(currentUserId).update({ profilePictureUrl: downloadURL });
-
-                document.getElementById('profilePicture').src = downloadURL;
-                uploadMessage.textContent = 'Upload complete.';
+                // Update the image on the page
+                document.getElementById('profilePicture').src = imageUrl;
                 
+                // Hide the modal and the "Choose Avatar" button permanently for this session
+                avatarModal.style.display = 'none';
+                chooseAvatarBtn.style.display = 'none';
+
             } catch (error) {
-                console.error("Upload failed:", error);
-                uploadMessage.textContent = 'Upload failed. Please try again.';
-            } finally {
-                spinner.style.display = 'none';
-                setTimeout(() => { uploadMessage.textContent = ''; }, 3000);
+                console.error("Failed to save avatar:", error);
+                modalMessage.textContent = 'Error saving. Please try again.';
             }
         }
 

@@ -26,6 +26,9 @@
             color: var(--text-primary);
             font-family: var(--font-sans);
             -webkit-font-smoothing: antialiased;
+            /* Hide content until redirect check is complete */
+            opacity: 0;
+            transition: opacity 0.3s;
         }
         .container {
             width: 100%;
@@ -46,7 +49,7 @@
         }
         .stepper {
             position: relative;
-            height: 150px; /* Fixed height for smooth transitions */
+            height: 150px;
         }
         .form-step {
             position: absolute;
@@ -101,14 +104,12 @@
     <div class="container">
         <div class="logo">C</div>
         <div class="stepper">
-            <!-- Step 1: ID -->
             <div id="id-section" class="form-step">
                 <div class="input-group">
                     <input type="email" id="cometId" required placeholder="Comet ID">
                 </div>
                 <button class="btn" onclick="checkId()">Continue<span>→</span></button>
             </div>
-            <!-- Step 2: Password -->
             <div id="password-section" class="form-step hidden">
                 <p class="user-display" id="user-display-id"></p>
                 <div class="input-group">
@@ -121,13 +122,29 @@
         <p class="footer-link"><a href="2.html">Create a Comet account</a></p>
     </div>
     <script>
+        // --- NEW: PERSISTENT LOGIN CHECK ---
+        // This runs immediately. If the user is already logged in, redirect them.
+        (function() {
+            if (localStorage.getItem('loggedInUserCometId')) {
+                // User is already logged in, redirect to the main app
+                window.location.replace('https://abc.xyz');
+            } else {
+                // If not logged in, show the login form
+                document.body.style.opacity = '1';
+            }
+        })();
+        
         const firebaseConfig = { apiKey: "AIzaSyBDHgR4VKaa-c5OcfGDhaLfVlDBkRRWd8k", authDomain: "commet-accounts.firebaseapp.com", projectId: "commet-accounts", storageBucket: "commet-accounts.firebasestorage.app", messagingSenderId: "35074463743", appId: "1:35074463743:web:e11289b56b6fa845e879ca", measurementId: "G-F1N8TQLMT5" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        
         const idSection = document.getElementById('id-section'), passwordSection = document.getElementById('password-section'), cometIdInput = document.getElementById('cometId'), passwordInput = document.getElementById('password'), userDisplayId = document.getElementById('user-display-id'), messageEl = document.getElementById('message');
         let verifiedCometId = '';
+
         function showMessage(msg) { messageEl.textContent = msg; }
+        
         async function checkId() {
+            // ... (rest of the function is the same)
             const cometId = cometIdInput.value.trim().toLowerCase();
             if (!cometId) return;
             const idWithoutDomain = cometId.replace('@comet.com', '');
@@ -141,6 +158,7 @@
                 } else { showMessage('ID not found.'); }
             } catch (error) { showMessage('System error.'); }
         }
+
         async function login() {
             const password = passwordInput.value;
             if (!password) return;
@@ -149,7 +167,8 @@
                 const userDoc = await db.collection('users').doc(idWithoutDomain).get();
                 if (userDoc.data().password === password) {
                     localStorage.setItem('loggedInUserCometId', verifiedCometId);
-                    window.location.href = '3.html';
+                    // --- UPDATED REDIRECT ---
+                    window.location.href = 'https://abc.xyz';
                 } else { showMessage('Authentication failed.'); }
             } catch (error) { showMessage('System error.'); }
         }

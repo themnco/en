@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comet</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400&display=swap');
+        :root {
+            --background: #000000;
+            --text-primary: #FFFFFF;
+            --text-secondary: #888888;
+            --border-color: #333333;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { background: var(--background); }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            width: 100%;
+            max-width: 360px;
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            width: 48px; height: 48px;
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 40px auto;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .stepper {
+            position: relative;
+            height: 150px; /* Fixed height for smooth transitions */
+        }
+        .form-step {
+            position: absolute;
+            width: 100%;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .form-step.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .input-group { margin-bottom: 30px; text-align: left; }
+        .input-group input {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            border-bottom-color: var(--text-primary);
+        }
+        .user-display {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .btn {
+            background: none; border: none; color: var(--text-primary);
+            font-size: 1rem; font-family: var(--font-sans);
+            cursor: pointer; opacity: 0.8; transition: opacity 0.2s;
+            width: 100%; text-align: right; padding: 10px 0;
+        }
+        .btn:hover { opacity: 1; }
+        .btn span { margin-left: 10px; }
+        .message { color: var(--text-secondary); font-size: 0.9rem; margin-top: 20px; height: 20px; }
+        .footer-link { margin-top: 40px; }
+        .footer-link a { color: var(--text-secondary); font-size: 0.9rem; text-decoration: none; transition: color 0.2s; }
+        .footer-link a:hover { color: var(--text-primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">C</div>
+        <div class="stepper">
+            <!-- Step 1: ID -->
+            <div id="id-section" class="form-step">
+                <div class="input-group">
+                    <input type="email" id="cometId" required placeholder="Comet ID">
+                </div>
+                <button class="btn" onclick="checkId()">Continue<span>→</span></button>
+            </div>
+            <!-- Step 2: Password -->
+            <div id="password-section" class="form-step hidden">
+                <p class="user-display" id="user-display-id"></p>
+                <div class="input-group">
+                    <input type="password" id="password" required placeholder="Password">
+                </div>
+                <button class="btn" onclick="login()">Authenticate<span>→</span></button>
+            </div>
+        </div>
+        <p class="message" id="message"></p>
+        <p class="footer-link"><a href="2.html">Create a Comet account</a></p>
+    </div>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyBDHgR4VKaa-c5OcfGDhaLfVlDBkRRWd8k", authDomain: "commet-accounts.firebaseapp.com", projectId: "commet-accounts", storageBucket: "commet-accounts.firebasestorage.app", messagingSenderId: "35074463743", appId: "1:35074463743:web:e11289b56b6fa845e879ca", measurementId: "G-F1N8TQLMT5" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const idSection = document.getElementById('id-section'), passwordSection = document.getElementById('password-section'), cometIdInput = document.getElementById('cometId'), passwordInput = document.getElementById('password'), userDisplayId = document.getElementById('user-display-id'), messageEl = document.getElementById('message');
+        let verifiedCometId = '';
+        function showMessage(msg) { messageEl.textContent = msg; }
+        async function checkId() {
+            const cometId = cometIdInput.value.trim().toLowerCase();
+            if (!cometId) return;
+            const idWithoutDomain = cometId.replace('@comet.com', '');
+            try {
+                const userDoc = await db.collection('users').doc(idWithoutDomain).get();
+                if (userDoc.exists) {
+                    verifiedCometId = cometId;
+                    userDisplayId.textContent = cometId;
+                    idSection.classList.add('hidden');
+                    setTimeout(() => { passwordSection.classList.remove('hidden'); passwordInput.focus(); }, 300);
+                } else { showMessage('ID not found.'); }
+            } catch (error) { showMessage('System error.'); }
+        }
+        async function login() {
+            const password = passwordInput.value;
+            if (!password) return;
+            const idWithoutDomain = verifiedCometId.replace('@comet.com', '');
+            try {
+                const userDoc = await db.collection('users').doc(idWithoutDomain).get();
+                if (userDoc.data().password === password) {
+                    localStorage.setItem('loggedInUserCometId', verifiedCometId);
+                    window.location.href = '3.html';
+                } else { showMessage('Authentication failed.'); }
+            } catch (error) { showMessage('System error.'); }
+        }
+    </script>
+</body>
+</html>

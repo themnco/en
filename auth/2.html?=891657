@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comet - Create Account</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400&display=swap');
+        :root {
+            --background: #000000;
+            --text-primary: #FFFFFF;
+            --text-secondary: #888888;
+            --border-color: #333333;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { background: var(--background); }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--text-primary); font-family: var(--font-sans); padding: 50px 0; }
+        .container { width: 100%; max-width: 400px; padding: 20px; }
+        .header { margin-bottom: 40px; }
+        .header h1 { font-size: 2rem; font-weight: 500; }
+        .input-group { margin-bottom: 25px; text-align: left; }
+        .input-group input, .input-group select { width: 100%; padding: 10px 0; font-size: 1rem; color: var(--text-primary); font-family: var(--font-sans); background: transparent; border: none; border-bottom: 1px solid var(--border-color); outline: none; transition: border-color 0.2s; border-radius: 0; -webkit-appearance: none; }
+        .input-group input:focus, .input-group select:focus { border-bottom-color: var(--text-primary); }
+        select { color: var(--text-secondary); } select option { background: #111; color: var(--text-primary); } select:valid { color: var(--text-primary); }
+        .btn { background: none; border: none; color: var(--text-primary); font-size: 1rem; font-family: var(--font-sans); cursor: pointer; opacity: 0.8; transition: opacity 0.2s; width: 100%; text-align: right; padding: 10px 0; margin-top: 20px;}
+        .btn:hover { opacity: 1; }
+        .btn span { margin-left: 10px; }
+        .message { color: var(--text-secondary); font-size: 0.9rem; margin-top: 20px; height: 20px; }
+        .footer-link { margin-top: 40px; text-align: center; }
+        .footer-link a { color: var(--text-secondary); font-size: 0.9rem; text-decoration: none; transition: color 0.2s; }
+        .footer-link a:hover { color: var(--text-primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Create Account</h1></div>
+        <form onsubmit="registerUser(event)">
+            <div class="input-group"><input type="text" id="firstName" required placeholder="First Name"></div>
+            <div class="input-group"><input type="text" id="lastName" required placeholder="Last Name"></div>
+            <div class="input-group"><input type="text" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" id="dob" required placeholder="Date of Birth"></div>
+            <div class="input-group"><select id="gender" required><option value="" disabled selected>Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Prefer not to say">Prefer not to say</option></select></div>
+            <div class="input-group"><input type="text" id="cometId" required placeholder="Comet ID (e.g., username@comet.com)"></div>
+            <div class="input-group"><input type="password" id="password" required placeholder="Password"></div>
+            <div class="input-group"><input type="password" id="confirmPassword" required placeholder="Confirm Password"></div>
+            <button class="btn" type="submit">Create Account<span>→</span></button>
+        </form>
+        <p class="message" id="message"></p>
+        <p class="footer-link"><a href="1.html">Already have an account?</a></p>
+    </div>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyBDHgR4VKaa-c5OcfGDhaLfVlDBkRRWd8k", authDomain: "commet-accounts.firebaseapp.com", projectId: "commet-accounts", storageBucket: "commet-accounts.firebasestorage.app", messagingSenderId: "35074463743", appId: "1:35074463743:web:e11289b56b6fa845e879ca", measurementId: "G-F1N8TQLMT5" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const messageEl = document.getElementById('message');
+        function showMessage(text) { messageEl.textContent = text; }
+        async function registerUser(event) {
+            event.preventDefault();
+            const firstName = document.getElementById('firstName').value.trim(), lastName = document.getElementById('lastName').value.trim(), dob = document.getElementById('dob').value, gender = document.getElementById('gender').value, cometIdInput = document.getElementById('cometId').value.trim().toLowerCase(), password = document.getElementById('password').value, confirmPassword = document.getElementById('confirmPassword').value;
+            const cometIdPart = cometIdInput.replace('@comet.com', ''); const fullCometId = `${cometIdPart}@comet.com`;
+            if (!firstName || !lastName || !dob || !gender || !cometIdPart || !password) return showMessage('All fields are required.');
+            if (password !== confirmPassword) return showMessage('Passwords do not match.'); if (password.length < 6) return showMessage('Password too short.'); if (/\s/.test(cometIdPart)) return showMessage('ID cannot contain spaces.');
+            try {
+                const userDoc = await db.collection('users').doc(cometIdPart).get();
+                if (userDoc.exists) { return showMessage('ID is already registered.'); }
+                const newUser = { firstName, lastName, dob, gender, cometId: fullCometId, password, createdAt: new Date() };
+                await db.collection('users').doc(cometIdPart).set(newUser);
+                localStorage.setItem('loggedInUserCometId', fullCometId);
+                window.location.href = '3.html';
+            } catch (error) { showMessage('System error.'); }
+        }
+    </script>
+</body>
+</html>

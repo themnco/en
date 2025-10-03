@@ -6,7 +6,6 @@
     <title>Comet - Account</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <!-- The Storage SDK is no longer needed -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400&display=swap');
         :root {
@@ -34,51 +33,55 @@
             display: flex;
             align-items: center;
             gap: 30px;
-            margin-bottom: 30px;
+            margin-bottom: 60px;
         }
         .profile-picture-container {
+            position: relative; /* Needed for the overlay */
             width: 96px; height: 96px;
             border-radius: 50%;
             border: 1px solid var(--border-color);
             flex-shrink: 0;
+            cursor: pointer; /* Indicates it's clickable */
         }
         #profilePicture {
             width: 100%; height: 100%;
             border-radius: 50%;
             object-fit: cover;
         }
+        /* NEW: Overlay for the "Change" text on hover */
+        .profile-picture-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .profile-picture-container:hover .profile-picture-overlay {
+            opacity: 1;
+        }
+
         .profile-header h1 { font-size: 2.5rem; font-weight: 500; }
         .profile-header p { color: var(--text-secondary); font-family: var(--font-mono); margin-top: 10px; }
-        
-        #chooseAvatarBtn {
-            background: none;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            font-family: var(--font-sans);
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 30px;
-            display: none; /* Hidden by default, shown via JS if needed */
-        }
-        #chooseAvatarBtn:hover {
-            color: var(--text-primary);
-            border-color: var(--text-primary);
-        }
         
         .details-list dt { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; }
         .details-list dd { font-size: 1.2rem; font-family: var(--font-mono); margin-bottom: 30px; }
         .loading { text-align: center; margin-top: 100px; font-size: 1rem; color: var(--text-secondary); }
         
-        /* --- Avatar Selection Modal --- */
+        /* --- Avatar Selection Modal (CSS is unchanged) --- */
         #avatarModal {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             background: rgba(0,0,0,0.8);
             backdrop-filter: blur(5px);
-            display: none; /* Hidden by default */
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 100;
@@ -125,16 +128,16 @@
         </nav>
         <div class="main-content">
             <section class="profile-picture-section">
-                <div class="profile-picture-container">
+                <!-- MODIFIED: The container is now the button -->
+                <div class="profile-picture-container" onclick="openAvatarModal()">
                     <img id="profilePicture" src="" alt="Profile Picture">
+                    <div class="profile-picture-overlay">Change</div>
                 </div>
                 <header class="profile-header">
                     <h1 id="nameDisplay"></h1>
                     <p id="cometIdDisplay"></p>
                 </header>
             </section>
-
-            <button id="chooseAvatarBtn" onclick="openAvatarModal()">Choose Avatar</button>
             
             <dl class="details-list">
                 <div> <dt>Date of Birth</dt> <dd id="dobDisplay"></dd> </div>
@@ -149,7 +152,7 @@
         <div class="modal-content">
             <h2>Select Your Avatar</h2>
             <div id="avatarGrid"></div>
-            <p id="modalMessage">Your choice is permanent.</p>
+            <p id="modalMessage"></p>
         </div>
     </div>
 
@@ -160,7 +163,6 @@
 
         const avatarModal = document.getElementById('avatarModal');
         const avatarGrid = document.getElementById('avatarGrid');
-        const chooseAvatarBtn = document.getElementById('chooseAvatarBtn');
         let currentUserId = null;
         let isGridBuilt = false;
 
@@ -183,16 +185,14 @@
 
                     const profilePicElement = document.getElementById('profilePicture');
                     
+                    // MODIFIED: Simplified logic. Always show an avatar.
                     if (userData.profilePictureUrl) {
-                        // User has already chosen a picture, so just display it
+                        // If user has a saved picture, show it.
                         profilePicElement.src = userData.profilePictureUrl;
-                        // The "Choose Avatar" button remains hidden
                     } else {
-                        // User has NOT chosen a picture yet
-                        // Show a default placeholder
-                        profilePicElement.src = `https://xperts-app.github.io/extensions/cdn/Images/profile/1.jpg`;
-                        // Show the button to let them choose
-                        chooseAvatarBtn.style.display = 'block';
+                        // If not, show a random default one.
+                        const randomNumber = Math.floor(Math.random() * 20) + 1;
+                        profilePicElement.src = `https://xperts-app.github.io/extensions/cdn/Images/profile/${randomNumber}.jpg`;
                     }
 
                     document.getElementById('loading').style.display = 'none';
@@ -207,7 +207,6 @@
         }
 
         function openAvatarModal() {
-            // Build the grid of images only once
             if (!isGridBuilt) {
                 for (let i = 1; i <= 20; i++) {
                     const img = document.createElement('img');
@@ -222,7 +221,6 @@
             avatarModal.style.display = 'flex';
         }
         
-        // Clicking the dark background will also close the modal
         avatarModal.onclick = function(event) {
             if (event.target === avatarModal) {
                 avatarModal.style.display = 'none';
@@ -236,17 +234,15 @@
             modalMessage.textContent = 'Saving...';
             
             try {
-                // Update Firestore with the chosen URL
                 await db.collection('users').doc(currentUserId).update({
                     profilePictureUrl: imageUrl
                 });
 
-                // Update the image on the page
                 document.getElementById('profilePicture').src = imageUrl;
                 
-                // Hide the modal and the "Choose Avatar" button permanently for this session
+                // MODIFIED: No longer need to hide any button. Just close the modal.
                 avatarModal.style.display = 'none';
-                chooseAvatarBtn.style.display = 'none';
+                modalMessage.textContent = ''; // Reset message for next time
 
             } catch (error) {
                 console.error("Failed to save avatar:", error);

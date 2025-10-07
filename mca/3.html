@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Details</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f4f7fa;
+            --text-color: #333;
+            --card-bg: #fff;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFade 0.6s forwards;
+        }
+
+        @keyframes slideUpFade {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header-logo {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .header-info h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        .header-info p {
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 40px;
+        }
+        
+        .sidebar .person-card {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .sidebar .person-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 4px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .sidebar h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .sidebar p {
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        .details-section {
+            margin-bottom: 30px;
+        }
+        
+        .details-section h3 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            margin-bottom: 12px;
+        }
+        
+        .detail-item strong {
+            display: block;
+            color: #555;
+            margin-bottom: 3px;
+        }
+        
+        .detail-item p, .detail-item a {
+            color: #333;
+            white-space: pre-wrap; /* To respect newlines in textareas */
+            word-wrap: break-word;
+        }
+        
+        .detail-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .detail-item a:hover {
+            color: #357ABD;
+        }
+        
+        #loader {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 50px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            margin-left: calc((100% - 1000px)/2);
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="2.html" class="back-link">&larr; Back to Companies</a>
+    <div class="container" id="details-container" style="display:none;">
+        <header class="header">
+            <img src="" alt="Company Logo" id="companyLogo" class="header-logo">
+            <div class="header-info">
+                <h1 id="companyName"></h1>
+                <p id="companyType"></p>
+            </div>
+        </header>
+        <main class="main-content">
+            <aside class="sidebar">
+                <div class="person-card">
+                    <img src="" alt="Founder" id="founderImage" class="person-img">
+                    <h4 id="founderName"></h4>
+                    <p>Founder</p>
+                </div>
+                <div class="person-card">
+                    <h4 id="ceoName"></h4>
+                    <p>CEO</p>
+                </div>
+            </aside>
+            <div class="details-content">
+                <div class="details-section">
+                    <h3>Corporate Information</h3>
+                    <div class="detail-item"><strong>Founding Date:</strong> <p id="foundingDate"></p></div>
+                    <div class="detail-item"><strong>Registered Office:</strong> <p id="registeredOffice"></p></div>
+                    <div class="detail-item"><strong>Ownership Structure:</strong> <p id="ownershipStructure"></p></div>
+                    <div class="detail-item"><strong>Contact:</strong> <p id="contactInfo"></p></div>
+                </div>
+                <div class="details-section">
+                    <h3>Board of Directors</h3>
+                    <div class="detail-item"><p id="boardDirectors"></p></div>
+                </div>
+                <div class="details-section">
+                    <h3>Documents</h3>
+                    <div class="detail-item">
+                        <strong>Tax File:</strong> 
+                        <a href="#" id="taxFileUrl" target="_blank" rel="noopener noreferrer">View Document</a>
+                    </div>
+                     <div class="detail-item">
+                        <strong>Profit File:</strong> 
+                        <a href="#" id="profitFileUrl" target="_blank" rel="noopener noreferrer">View Document</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="loader">Loading company details...</div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdmRjk-1pfifKxmKbnjNQo4",
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Function to render data to the page
+        const renderCompanyDetails = (data) => {
+            document.getElementById('companyName').textContent = data.companyName || 'N/A';
+            document.getElementById('companyType').textContent = data.companyType || 'N/A';
+            document.getElementById('companyLogo').src = data.logoUrl || 'https://via.placeholder.com/120';
+            
+            document.getElementById('founderImage').src = data.founderImageUrl || 'https://via.placeholder.com/120';
+            document.getElementById('founderName').textContent = data.founderName || 'N/A';
+            document.getElementById('ceoName').textContent = data.ceoName || 'N/A';
+            
+            document.getElementById('foundingDate').textContent = data.foundingDate || 'N/A';
+            document.getElementById('registeredOffice').textContent = data.registeredOffice || 'N/A';
+            document.getElementById('ownershipStructure').textContent = data.ownershipStructure || 'N/A';
+            document.getElementById('contactInfo').textContent = data.contactInfo || 'N/A';
+            document.getElementById('boardDirectors').textContent = data.boardDirectors || 'N/A';
+
+            const taxLink = document.getElementById('taxFileUrl');
+            if (data.taxFileUrl) {
+                taxLink.href = data.taxFileUrl;
+                taxLink.parentElement.style.display = 'block';
+            } else {
+                taxLink.parentElement.style.display = 'none';
+            }
+
+            const profitLink = document.getElementById('profitFileUrl');
+            if (data.profitFileUrl) {
+                profitLink.href = data.profitFileUrl;
+                profitLink.parentElement.style.display = 'block';
+            } else {
+                profitLink.parentElement.style.display = 'none';
+            }
+
+            // Show the container and hide loader
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('details-container').style.display = 'block';
+        };
+
+        // Fetch company details on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const companyId = params.get('id');
+            const loader = document.getElementById('loader');
+
+            if (!companyId) {
+                loader.textContent = 'Error: No company ID provided.';
+                return;
+            }
+
+            try {
+                const docRef = db.collection('companies').doc(companyId);
+                const doc = await docRef.get();
+
+                if (doc.exists) {
+                    renderCompanyDetails(doc.data());
+                } else {
+                    loader.textContent = 'Company not found.';
+                }
+            } catch (error) {
+                console.error("Error fetching document: ", error);
+                loader.textContent = 'Error loading company details.';
+            }
+        });
+    </script>
+</body>
+</html>

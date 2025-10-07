@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Companies</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f4f7fa;
+            --text-color: #333;
+            --card-bg: #fff;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            opacity: 0;
+            transform: translateY(-20px);
+            animation: slideDownFade 0.6s forwards;
+        }
+        
+        @keyframes slideDownFade {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        #company-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        
+        .company-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            animation: popIn 0.5s forwards;
+        }
+
+        .company-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .card-logo-container {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        
+        .card-logo {
+            max-width: 80%;
+            max-height: 100px;
+            object-fit: contain;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .card-type {
+            font-size: 0.9rem;
+            color: #777;
+            background-color: var(--secondary-color);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        #loader {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Our Companies</h1>
+            <p>Explore our portfolio of innovative companies.</p>
+        </header>
+
+        <main>
+            <div id="company-grid">
+                <div id="loader">Loading companies...</div>
+                <!-- Company cards will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdmRjk-1pfifKxmKbnjNQo4",
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const displayCompanies = async () => {
+            const companyGrid = document.getElementById('company-grid');
+            try {
+                const snapshot = await db.collection("companies").orderBy("companyName").get();
+
+                if (snapshot.empty) {
+                    companyGrid.innerHTML = '<p>No companies found.</p>';
+                    return;
+                }
+                
+                let html = '';
+                let delay = 0;
+                snapshot.forEach(doc => {
+                    const company = doc.data();
+                    const docId = doc.id;
+                    html += `
+                        <a href="3.html?id=${docId}" class="company-card" style="animation-delay: ${delay}s">
+                            <div class="card-logo-container">
+                                <img src="${company.logoUrl}" alt="${company.companyName} Logo" class="card-logo">
+                            </div>
+                            <div class="card-content">
+                                <h3 class="card-title">${company.companyName}</h3>
+                                <span class="card-type">${company.companyType}</span>
+                            </div>
+                        </a>
+                    `;
+                    delay += 0.05; // Staggered animation
+                });
+                
+                document.getElementById('loader').style.display = 'none';
+                companyGrid.innerHTML = html;
+
+            } catch (error) {
+                console.error("Error fetching companies: ", error);
+                companyGrid.innerHTML = '<p>Error loading companies. Please try again later.</p>';
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', displayCompanies);
+    </script>
+</body>
+</html>

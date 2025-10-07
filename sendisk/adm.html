@@ -86,11 +86,6 @@
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
         }
-        
-        .code-container {
-            display: flex;
-            gap: 10px;
-        }
 
         .btn {
             display: block;
@@ -103,20 +98,12 @@
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
         
         .btn:hover { background-color: #0071e3; }
         .btn:active { transform: scale(0.98); }
         .btn[disabled] { background-color: #a0a0a5; cursor: not-allowed; }
-        
-        .btn-secondary {
-            background-color: #e5e5e7;
-            color: var(--text-color);
-            flex-shrink: 0; /* Prevents button from shrinking */
-        }
-
-        .btn-secondary:hover { background-color: #dcdce0; }
         
         .status-message {
             margin-top: 20px;
@@ -132,14 +119,11 @@
 
     <div class="container">
         <h1>Room Manager</h1>
-        <p class="subtitle">Enter a code to edit, or generate a new one.</p>
+        <p class="subtitle">Enter a code to create or edit a room.</p>
 
         <div class="input-group">
             <label for="roomCode">Room Code</label>
-            <div class="code-container">
-                <input type="text" id="roomCode" class="input-field" placeholder="Type or Generate Code">
-                <button id="generateBtn" class="btn btn-secondary" style="width: auto; padding: 0 20px;">Generate</button>
-            </div>
+            <input type="text" id="roomCode" class="input-field" placeholder="Enter a Unique Room Code">
         </div>
 
         <div id="imageInputs" class="input-group">
@@ -176,20 +160,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const generateBtn = document.getElementById('generateBtn');
         const saveBtn = document.getElementById('saveBtn');
         const roomCodeInput = document.getElementById('roomCode');
         const urlInputs = document.querySelectorAll('.url-input');
         const statusMessage = document.getElementById('statusMessage');
-
-        function generateRoomCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let result = '';
-            for (let i = 0; i < 6; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        }
 
         function showStatus(message, type = 'info') {
             statusMessage.innerHTML = message;
@@ -212,19 +186,19 @@
 
         async function fetchRoomData() {
             const roomCode = roomCodeInput.value.trim().toUpperCase();
-            if (roomCode.length < 6) {
+            if (!roomCode) {
                 clearForm();
                 statusMessage.style.display = 'none';
                 return;
             }
-
+            
             showStatus(`Checking room "${roomCode}"...`, 'info');
             
             try {
                 const docRef = db.collection('rooms').doc(roomCode);
                 const docSnap = await docRef.get();
                 
-                clearForm(); // Clear form before populating
+                clearForm();
                 
                 if (docSnap.exists) {
                     const data = docSnap.data();
@@ -244,21 +218,21 @@
         }
 
         // --- Event Listeners ---
-
-        generateBtn.addEventListener('click', () => {
-            roomCodeInput.value = generateRoomCode();
-            clearForm();
-            showStatus(`Ready to create new room: <strong>${roomCodeInput.value}</strong>`, 'info');
-            roomCodeInput.focus();
-        });
-
-        // Fetch data when the user finishes typing in the room code field
+        
+        // Fetch data when the user clicks away from the room code field
         roomCodeInput.addEventListener('blur', fetchRoomData);
+        // Also fetch if they press Enter
+        roomCodeInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                fetchRoomData();
+                event.preventDefault(); // Prevent form submission
+            }
+        });
 
         saveBtn.addEventListener('click', () => {
             const roomCode = roomCodeInput.value.trim().toUpperCase();
             if (!roomCode) {
-                alert('Please provide a room code.');
+                alert('Please enter a room code.');
                 return;
             }
 

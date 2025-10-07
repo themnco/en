@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Companies</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f4f7fa;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --success-color: #50e3c2;
+            --error-color: #d0021b;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-container, .list-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .form-container:hover, .list-container:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        h1, h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        
+        .form-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #777;
+            color: white;
+            margin-left: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #666;
+        }
+
+        #company-list ul {
+            list-style: none;
+        }
+
+        #company-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+        
+        #company-list li:last-child {
+            border-bottom: none;
+        }
+
+        #company-list li:hover {
+            background-color: #f9f9f9;
+        }
+
+        .company-name {
+            font-weight: 600;
+        }
+
+        .edit-btn {
+            background: var(--success-color);
+            color: #fff;
+            padding: 5px 10px;
+        }
+        .edit-btn:hover {
+            background-color: #40c2a8;
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 5px;
+            color: #fff;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 1000;
+        }
+        #notification.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -10px);
+        }
+        #notification.success { background-color: var(--success-color); }
+        #notification.error { background-color: var(--error-color); }
+        
+        @media (max-width: 992px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="form-container">
+            <h1>Company Management</h1>
+            <form id="companyForm">
+                <input type="hidden" id="companyId">
+
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-group">
+                        <label for="companyName">Company Name</label>
+                        <input type="text" id="companyName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="companyType">Company Type (e.g., Public, Private)</label>
+                        <input type="text" id="companyType" required>
+                    </div>
+                     <div class="form-group">
+                        <label for="logoUrl">Company Logo URL</label>
+                        <input type="url" id="logoUrl" required>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>People & Leadership</h3>
+                     <div class="form-group">
+                        <label for="founderName">Founder Name</label>
+                        <input type="text" id="founderName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="founderImageUrl">Founder Image URL</label>
+                        <input type="url" id="founderImageUrl">
+                    </div>
+                    <div class="form-group">
+                        <label for="ceoName">CEO Name</label>
+                        <input type="text" id="ceoName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="boardDirectors">Board of Directors (one per line)</label>
+                        <textarea id="boardDirectors" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Corporate Details</h3>
+                    <div class="form-group">
+                        <label for="foundingDate">Founding Date</label>
+                        <input type="date" id="foundingDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="registeredOffice">Registered Office Address</label>
+                        <textarea id="registeredOffice" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="ownershipStructure">Structure of Ownership</label>
+                        <textarea id="ownershipStructure" rows="3"></textarea>
+                    </div>
+                     <div class="form-group">
+                        <label for="contactInfo">Contact Information</label>
+                        <textarea id="contactInfo" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Financial & Legal Documents</h3>
+                     <div class="form-group">
+                        <label for="taxFileUrl">Tax File URL</label>
+                        <input type="url" id="taxFileUrl">
+                    </div>
+                    <div class="form-group">
+                        <label for="profitFileUrl">Profit File URL</label>
+                        <input type="url" id="profitFileUrl">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Company</button>
+                <button type="button" id="clearBtn" class="btn btn-secondary">New Company</button>
+            </form>
+        </div>
+
+        <div class="list-container">
+            <h2>Existing Companies</h2>
+            <div id="company-list">
+                <ul>
+                    <!-- Companies will be listed here by JS -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="notification"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdmRjk-1pfifKxmKbnjNQo4",
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const companiesCollection = db.collection("companies");
+
+        // DOM Elements
+        const companyForm = document.getElementById('companyForm');
+        const companyList = document.querySelector('#company-list ul');
+        const companyIdField = document.getElementById('companyId');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // Show notification
+        const showNotification = (message, type) => {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `show ${type}`;
+            setTimeout(() => {
+                notification.className = notification.className.replace('show', '');
+            }, 3000);
+        };
+        
+        // Clear form to add new company
+        const clearForm = () => {
+            companyForm.reset();
+            companyIdField.value = '';
+            document.querySelector('.btn-primary').textContent = 'Save Company';
+        }
+
+        // Load all companies and display them
+        const loadCompanies = async () => {
+            companyList.innerHTML = '<li>Loading...</li>';
+            try {
+                const snapshot = await companiesCollection.orderBy("companyName").get();
+                if (snapshot.empty) {
+                    companyList.innerHTML = '<li>No companies found. Add one!</li>';
+                    return;
+                }
+                
+                let html = '';
+                snapshot.forEach(doc => {
+                    const company = doc.data();
+                    html += `
+                        <li>
+                            <span class="company-name">${company.companyName}</span>
+                            <button class="btn edit-btn" onclick="editCompany('${doc.id}')">Edit</button>
+                        </li>
+                    `;
+                });
+                companyList.innerHTML = html;
+
+            } catch (error) {
+                console.error("Error loading companies: ", error);
+                showNotification('Failed to load companies.', 'error');
+                companyList.innerHTML = '<li>Error loading data.</li>';
+            }
+        };
+
+        // Edit company: fetch data and populate form
+        window.editCompany = async (id) => {
+            try {
+                const docRef = companiesCollection.doc(id);
+                const doc = await docRef.get();
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    companyIdField.value = doc.id;
+                    document.getElementById('companyName').value = data.companyName || '';
+                    document.getElementById('founderName').value = data.founderName || '';
+                    document.getElementById('founderImageUrl').value = data.founderImageUrl || '';
+                    document.getElementById('logoUrl').value = data.logoUrl || '';
+                    document.getElementById('ceoName').value = data.ceoName || '';
+                    document.getElementById('companyType').value = data.companyType || '';
+                    document.getElementById('registeredOffice').value = data.registeredOffice || '';
+                    document.getElementById('taxFileUrl').value = data.taxFileUrl || '';
+                    document.getElementById('profitFileUrl').value = data.profitFileUrl || '';
+                    document.getElementById('boardDirectors').value = data.boardDirectors || '';
+                    document.getElementById('foundingDate').value = data.foundingDate || '';
+                    document.getElementById('ownershipStructure').value = data.ownershipStructure || '';
+                    document.getElementById('contactInfo').value = data.contactInfo || '';
+                    
+                    document.querySelector('.btn-primary').textContent = 'Update Company';
+                    window.scrollTo(0, 0); // Scroll to top
+                } else {
+                    console.error("No such document!");
+                    showNotification('Company not found.', 'error');
+                }
+            } catch (error) {
+                console.error("Error getting document:", error);
+                showNotification('Error fetching company data.', 'error');
+            }
+        };
+
+        // Handle form submission (Add or Update)
+        companyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = companyIdField.value;
+
+            const companyData = {
+                companyName: document.getElementById('companyName').value,
+                founderName: document.getElementById('founderName').value,
+                founderImageUrl: document.getElementById('founderImageUrl').value,
+                logoUrl: document.getElementById('logoUrl').value,
+                ceoName: document.getElementById('ceoName').value,
+                companyType: document.getElementById('companyType').value,
+                registeredOffice: document.getElementById('registeredOffice').value,
+                taxFileUrl: document.getElementById('taxFileUrl').value,
+                profitFileUrl: document.getElementById('profitFileUrl').value,
+                boardDirectors: document.getElementById('boardDirectors').value,
+                foundingDate: document.getElementById('foundingDate').value,
+                ownershipStructure: document.getElementById('ownershipStructure').value,
+                contactInfo: document.getElementById('contactInfo').value,
+            };
+
+            try {
+                if (id) {
+                    // Update existing company
+                    await companiesCollection.doc(id).update(companyData);
+                    showNotification('Company updated successfully!', 'success');
+                } else {
+                    // Add new company
+                    await companiesCollection.add(companyData);
+                    showNotification('Company added successfully!', 'success');
+                }
+                clearForm();
+                loadCompanies();
+            } catch (error) {
+                console.error("Error saving document: ", error);
+                showNotification('Error saving company.', 'error');
+            }
+        });
+
+        // Event Listeners
+        clearBtn.addEventListener('click', clearForm);
+        document.addEventListener('DOMContentLoaded', loadCompanies);
+    </script>
+</body>
+</html>

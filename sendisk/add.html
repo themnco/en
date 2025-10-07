@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        :root {
+            --background-color: #f5f5f7;
+            --card-background: #ffffff;
+            --text-color: #1d1d1f;
+            --secondary-text-color: #6e6e73;
+            --primary-blue: #007aff;
+            --border-color: #d2d2d7;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--card-background);
+            border-radius: 18px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text-color);
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary-text-color);
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: #fcfcfc;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        #roomCode {
+             font-family: 'SF Mono', 'Menlo', 'monospace';
+             text-transform: uppercase;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+        }
+        
+        .code-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            background-color: var(--primary-blue);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover { background-color: #0071e3; }
+        .btn:active { transform: scale(0.98); }
+        .btn[disabled] { background-color: #a0a0a5; cursor: not-allowed; }
+        
+        .btn-secondary {
+            background-color: #e5e5e7;
+            color: var(--text-color);
+            flex-shrink: 0; /* Prevents button from shrinking */
+        }
+
+        .btn-secondary:hover { background-color: #dcdce0; }
+        
+        .status-message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Room Manager</h1>
+        <p class="subtitle">Enter a code to edit, or generate a new one.</p>
+
+        <div class="input-group">
+            <label for="roomCode">Room Code</label>
+            <div class="code-container">
+                <input type="text" id="roomCode" class="input-field" placeholder="Type or Generate Code">
+                <button id="generateBtn" class="btn btn-secondary" style="width: auto; padding: 0 20px;">Generate</button>
+            </div>
+        </div>
+
+        <div id="imageInputs" class="input-group">
+            <label>Image URLs</label>
+            <input type="url" class="input-field url-input" placeholder="Image URL 1">
+            <input type="url" class="input-field url-input" placeholder="Image URL 2" style="margin-top: 8px;">
+            <input type="url" class="input-field url-input" placeholder="Image URL 3" style="margin-top: 8px;">
+            <input type="url" class="input-field url-input" placeholder="Image URL 4" style="margin-top: 8px;">
+            <input type="url" class="input-field url-input" placeholder="Image URL 5" style="margin-top: 8px;">
+            <input type="url" class="input-field url-input" placeholder="Image URL 6" style="margin-top: 8px;">
+            <input type="url" class="input-field url-input" placeholder="Image URL 7" style="margin-top: 8px;">
+        </div>
+
+        <button id="saveBtn" class="btn">Save Room</button>
+        
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdmRjk-1pfifKxmKbnjNQo4",
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const generateBtn = document.getElementById('generateBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const roomCodeInput = document.getElementById('roomCode');
+        const urlInputs = document.querySelectorAll('.url-input');
+        const statusMessage = document.getElementById('statusMessage');
+
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function showStatus(message, type = 'info') {
+            statusMessage.innerHTML = message;
+            if (type === 'success') {
+                statusMessage.style.backgroundColor = '#e5f3ff';
+                statusMessage.style.color = '#005bb5';
+            } else if (type === 'error') {
+                statusMessage.style.backgroundColor = '#ffe5e5';
+                statusMessage.style.color = '#d4001a';
+            } else { // info
+                statusMessage.style.backgroundColor = '#f0f0f0';
+                statusMessage.style.color = '#555';
+            }
+            statusMessage.style.display = 'block';
+        }
+
+        function clearForm() {
+            urlInputs.forEach(input => input.value = '');
+        }
+
+        async function fetchRoomData() {
+            const roomCode = roomCodeInput.value.trim().toUpperCase();
+            if (roomCode.length < 6) {
+                clearForm();
+                statusMessage.style.display = 'none';
+                return;
+            }
+
+            showStatus(`Checking room "${roomCode}"...`, 'info');
+            
+            try {
+                const docRef = db.collection('rooms').doc(roomCode);
+                const docSnap = await docRef.get();
+                
+                clearForm(); // Clear form before populating
+                
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    showStatus(`Editing existing room: <strong>${roomCode}</strong>`, 'success');
+                    if (data.urls && Array.isArray(data.urls)) {
+                        data.urls.forEach((url, index) => {
+                            if (urlInputs[index]) urlInputs[index].value = url;
+                        });
+                    }
+                } else {
+                    showStatus(`This will create a new room: <strong>${roomCode}</strong>`, 'info');
+                }
+            } catch (error) {
+                console.error("Error fetching document:", error);
+                showStatus('Error fetching data. Check console.', 'error');
+            }
+        }
+
+        // --- Event Listeners ---
+
+        generateBtn.addEventListener('click', () => {
+            roomCodeInput.value = generateRoomCode();
+            clearForm();
+            showStatus(`Ready to create new room: <strong>${roomCodeInput.value}</strong>`, 'info');
+            roomCodeInput.focus();
+        });
+
+        // Fetch data when the user finishes typing in the room code field
+        roomCodeInput.addEventListener('blur', fetchRoomData);
+
+        saveBtn.addEventListener('click', () => {
+            const roomCode = roomCodeInput.value.trim().toUpperCase();
+            if (!roomCode) {
+                alert('Please provide a room code.');
+                return;
+            }
+
+            const urls = Array.from(urlInputs)
+                .map(input => input.value.trim())
+                .filter(url => url !== '');
+            
+            if (urls.length === 0) {
+                alert('Please enter at least one image URL.');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            db.collection('rooms').doc(roomCode).set({
+                urls: urls,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                const exampleLink = `2.html?room=${roomCode}&no=1`;
+                showStatus(`Room <strong>${roomCode}</strong> saved successfully! <br>Example: <a href="${exampleLink}" target="_blank">${exampleLink}</a>`, 'success');
+            })
+            .catch((error) => {
+                console.error('Error writing document: ', error);
+                showStatus('Error saving to Firestore. Check console.', 'error');
+            })
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Room';
+            });
+        });
+    </script>
+</body>
+</html>

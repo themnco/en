@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Viewer</title>
     <style>
-        /* 
-         * Key CSS for correct embedding in Framer (or any iframe).
-         * This ensures the content fills the container, not the entire browser window.
+        /*
+         * This CSS is optimized for embedding.
+         * It will fill any container (like a 370px wide Framer component).
         */
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%; /* Use 100% to fill the parent container (the iframe) */
-            overflow: hidden; /* Prevents any accidental scrollbars */
+            height: 100%;
+            overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #000; /* Fallback background */
         }
 
         body {
-            background-color: #000;
             color: #fff;
             display: flex;
             justify-content: center;
@@ -40,10 +40,13 @@
         
         #fullscreenImage {
             display: none;
-            /* These properties make the image fill the container while maintaining aspect ratio */
             width: 100%;
             height: 100%;
-            object-fit: contain; /* This is the magic: scales the image to fit without stretching or cropping */
+            /* 
+             *  KEY CHANGE: 'cover' fills the container completely,
+             *  cropping the image if necessary to maintain aspect ratio.
+             */
+            object-fit: cover;
         }
     </style>
 </head>
@@ -68,11 +71,9 @@
             measurementId: "G-170CCKFQPL"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // DOM Elements
         const loader = document.getElementById('loader');
         const errorMessageDiv = document.getElementById('errorMessage');
         const imageElement = document.getElementById('fullscreenImage');

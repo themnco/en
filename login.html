@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login</title>
+<style>
+  body { background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+  .container { width: 300px; text-align: center; }
+  input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #444; background: #111; color: white; }
+  button { width: 100%; padding: 10px; border: none; border-radius: 6px; background: #555; color: white; font-weight: bold; cursor: pointer; }
+  button:hover { background: #777; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Email" required />
+  <button onclick="checkEmail()">Next</button>
+
+  <div id="passwordSection" style="display:none;">
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBDHgR4VKaa-c5OcfGDhaLfVlDBkRRWd8k",
+    authDomain: "commet-accounts.firebaseapp.com",
+    projectId: "commet-accounts",
+    storageBucket: "commet-accounts.firebasestorage.app",
+    messagingSenderId: "35074463743",
+    appId: "1:35074463743:web:e11289b56b6fa845e879ca",
+    measurementId: "G-F1N8TQLMT5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let currentEmail = "";
+
+  async function checkEmail() {
+    const email = document.getElementById('email').value.trim();
+    if (!email) return alert("Enter email");
+    const docRef = doc(db, "users", email);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      currentEmail = email;
+      document.getElementById('email').disabled = true;
+      document.getElementById('passwordSection').style.display = 'block';
+    } else {
+      window.location.href = "2.html";
+    }
+  }
+
+  async function login() {
+    const password = document.getElementById('password').value.trim();
+    if (!password) return alert("Enter password");
+    const docRef = doc(db, "users", currentEmail);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists() && docSnap.data().password === password) {
+      window.location.href = "https://abc.xyz";
+    } else {
+      alert("Incorrect password");
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "ANTHROP\\C MAPS",
+  "description": "A map application that uses Gemini with Google Maps grounding to provide up-to-date and accurate location-based information, allowing users to search for places and get relevant results.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
